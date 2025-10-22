@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "pre-commit": "backend/.venv/bin/pre-commit run --all-files"
+  }
+}
