@@ -1,9 +1,10 @@
-from fastapi import FastAPI
-from .config import settings
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from .db.pg_conn import init_db
-from .dependenices import sessionDep
-from .models.user import User
+from starlette.middleware.sessions import SessionMiddleware
+from .router.auth import auth_router
 
 
 @asynccontextmanager
@@ -13,18 +14,25 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(SessionMiddleware, secret_key="some-random-string")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(auth_router)
+
+
+@app.exception_handler(HTTPException)
+def handle_exception(req: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"errorMsg": exc.detail, "statusCode": exc.status_code},
+    )
 
 
 @app.get("/")
 def root():
-    return {"status": settings.DATABASE_URL}
-
-
-# test route
-@app.post("/")
-async def add_test_user(session: sessionDep):
-    test_user = User(name="test", roll_no=10)
-    session.add(test_user)
-    await session.commit()
-    await session.refresh(test_user)
-    return {"user": test_user.dict()}
+    return {"status": "ok"}

@@ -8,9 +8,17 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import LOGO from '@/assets/logo.png';
 import GoogleIcon from '@/assets/google-icon.svg';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/userContext';
 
 export function Navbar() {
   const [open, setOpen] = React.useState(false);
+  const { user } = useAuth();
+  const pathname = usePathname();
+
+  if (pathname.includes('dashboard')) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -35,17 +43,24 @@ export function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center">
-          <Button className="group flex bg-transparent items-center text-sm font-medium px-3 py-2 rounded-md transition-all duration-300 hover:bg-accent hover:text-primary-foreground">
-            <Image
-              src={GoogleIcon}
-              alt="Google"
-              width={20}
-              height={20}
-              className="mr-1"
-            />{' '}
-            Log in
-            <ArrowRight className="ml-1 h-4 w-4 transform transition-transform duration-300 group-hover:translate-x-1" />
-          </Button>
+          {user?.email ? (
+            <Link href={'/dashboard/create-interview'}>Dashboard</Link>
+          ) : (
+            <Link
+              href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
+              className="group flex bg-transparent items-center text-sm font-medium px-3 py-2 rounded-md transition-all duration-300 hover:bg-accent hover:text-primary-foreground"
+            >
+              <Image
+                src={GoogleIcon}
+                alt="Google"
+                width={20}
+                height={20}
+                className="mr-1"
+              />{' '}
+              Log in
+              <ArrowRight className="ml-1 h-4 w-4 transform transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
+          )}
         </div>
 
         <Button
@@ -65,17 +80,24 @@ export function Navbar() {
             <MobileNavLink href="/features">Features</MobileNavLink>
             <MobileNavLink href="/pricing">Pricing</MobileNavLink>
             <MobileNavLink href="/testimonials">Testimonials</MobileNavLink>
-            <Button className="w-max group flex items-center text-sm font-medium px-3 py-2 rounded-md transition-all duration-300 bg-transparent hover:bg-accent hover:text-primary-foreground">
-              <Image
-                src={GoogleIcon}
-                alt="Google"
-                width={20}
-                height={20}
-                className="mr-1"
-              />
-              Log in
-              <ArrowRight className="ml-1 h-4 w-4 transform transition-transform duration-300 group-hover:translate-x-1" />
-            </Button>
+            {user?.email ? (
+              <Link href={'/dashboard/create-interview'}>Dashboard</Link>
+            ) : (
+              <Link
+                href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
+                className="w-max group flex items-center text-sm font-medium px-3 py-2 rounded-md transition-all duration-300 bg-transparent hover:bg-accent hover:text-primary-foreground"
+              >
+                <Image
+                  src={GoogleIcon}
+                  alt="Google"
+                  width={20}
+                  height={20}
+                  className="mr-1"
+                />
+                Log in
+                <ArrowRight className="ml-1 h-4 w-4 transform transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            )}
           </div>
         </div>
       )}

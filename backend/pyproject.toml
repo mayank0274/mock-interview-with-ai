@@ -6,8 +6,12 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "asyncpg>=0.30.0",
+    "authlib>=1.6.5",
     "fastapi>=0.119.1",
+    "httpx>=0.28.1",
+    "itsdangerous>=2.2.0",
     "pydantic-settings>=2.11.0",
+    "python-jose[cryptography]>=3.5.0",
     "sqlalchemy>=2.0.44",
     "sqlmodel>=0.0.27",
     "uvicorn>=0.38.0",
