@@ -16,7 +16,7 @@ export function Navbar() {
   const { user } = useAuth();
   const pathname = usePathname();
 
-  if (pathname.includes('dashboard')) {
+  if (pathname.includes('dashboard') || pathname.includes('interview')) {
     return null;
   }
 

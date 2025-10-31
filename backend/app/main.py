@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from .db.pg_conn import init_db
 from starlette.middleware.sessions import SessionMiddleware
 from .router.auth import auth_router
+from .router.interviews import interviews_router
 
 
 @asynccontextmanager
@@ -23,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router)
+app.include_router(interviews_router)
 
 
 @app.exception_handler(HTTPException)
