@@ -1,8 +1,9 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import JSON, Column, DateTime, Float, SQLModel, Field
 from uuid import uuid4
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel
+from typing import Optional, Any
 
 
 class InterviewStatus(str, Enum):
@@ -17,11 +18,15 @@ class InterviewSession(SQLModel, table=True):
     job_title: str
     job_description: str
     interview_type: str = Field(default="technical")
-    rem_duration: int = 30  # minutes
     interviewer_name: str
     interviewer_gender: str
     interviewer_voice: str
-    start_time: datetime = Field(default_factory=datetime.utcnow)
+    start_time: Optional[datetime] = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    end_time: Optional[datetime] = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
     status: InterviewStatus = Field(default=InterviewStatus.CREATED)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -33,3 +38,15 @@ class InterviewSessionReq(BaseModel):
     job_title: str = Field(min_length=10)
     job_description: str = Field(min_length=40)
     interview_type: str = Field(default="technical")
+
+
+class InterviewResults(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    interview_id: str = Field(foreign_key="interview_sessions.id")
+    communication_score: Optional[float] = Field(default=None, sa_column=Float())
+    technical_score: Optional[float] = Field(default=None, sa_column=Float())
+    clarity_score: Optional[float] = Field(default=None, sa_column=Float())
+    suggestions: Optional[Any] = Field(default=None, sa_column=Column(JSON))
+    chats: Optional[Any] = Field(default=None, sa_column=Column(JSON))
+
+    __tablename__ = "interview_results"

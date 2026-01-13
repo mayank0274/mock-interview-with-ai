@@ -2,15 +2,25 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from inngest.fast_api import serve
 from .db.pg_conn import init_db
 from starlette.middleware.sessions import SessionMiddleware
 from .router.auth import auth_router
 from .router.interviews import interviews_router
+from .db.redis import redis_client
+from .router.upload_files import upload_file_router
+from .inngest.client import inngest_client
+from .inngest.functions.transcription import transcription_workflow
+from .inngest.functions.evaluate_answer import (
+    evaluate_user_answer,
+    prepare_interview_result,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    print(f"[redis connection] : {redis_client.ping()}")
     yield
 
 
@@ -25,6 +35,12 @@ app.add_middleware(
 )
 app.include_router(auth_router)
 app.include_router(interviews_router)
+app.include_router(upload_file_router)
+serve(
+    app=app,
+    client=inngest_client,
+    functions=[transcription_workflow, evaluate_user_answer, prepare_interview_result],
+)
 
 
 @app.exception_handler(HTTPException)
@@ -36,5 +52,5 @@ def handle_exception(req: Request, exc: HTTPException):
 
 
 @app.get("/")
-def root():
+async def root():
     return {"status": "ok"}

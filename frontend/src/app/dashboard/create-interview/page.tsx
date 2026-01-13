@@ -60,7 +60,7 @@ export const ConfirmStart = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            Clicking Start will start your interview and it can be
+            Clicking Start will start your interview and it cannot be
             pasued/retaken after it. You can also start it later from Past
             Interview page
           </AlertDialogDescription>

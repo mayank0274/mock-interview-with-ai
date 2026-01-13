@@ -1,12 +1,169 @@
+/* eslint-disable */
+
 'use client';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mic, MicOff, SquareStop } from 'lucide-react';
+import { Mic, MicOff, Repeat, SquareStop } from 'lucide-react';
 import { useAuth } from '@/context/userContext';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/http/api';
 import { use } from 'react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+
+enum Turn {
+  INTERVIEWER = 'interviewer',
+  INTERMEDIATE = 'intermediate',
+  INTERVIEWEE = 'interviewee',
+}
+
+interface InterviewerResponse {
+  interviewer_res: {
+    question: string;
+    type: 'theory' | 'coding' | 'scenario' | 'follow_up' | 'clarification';
+    question_no: number;
+  };
+  redirect: boolean;
+}
+
+interface InterviewMetaData {
+  id: string;
+  user_email: string;
+  job_title: string;
+  job_description: string;
+  interview_type: string;
+  interviewer_name: string;
+  end_time: Date;
+}
+
+function speakMessage(message: string) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.lang = 'en-IN';
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  window.speechSynthesis.speak(utterance);
+  return utterance;
+}
+
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+const VoiceIndicator = ({ color = 'green' }: { color?: string }) => (
+  <motion.div
+    className={cn(
+      'absolute bottom-3 right-3 flex gap-0.5 items-end',
+      color === 'blue' && 'right-3',
+    )}
+    initial={{ opacity: 0.8 }}
+    animate={{ opacity: [0.8, 1, 0.8] }}
+    transition={{ repeat: Infinity, duration: 1 }}
+  >
+    {[...Array(4)].map((_, i) => (
+      <motion.div
+        key={i}
+        className={cn(
+          'w-1 rounded-full',
+          color === 'blue' ? 'bg-blue-400' : 'bg-green-400',
+        )}
+        animate={{ height: [6, 14, 6] }}
+        transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.1 }}
+      />
+    ))}
+  </motion.div>
+);
+
+const useAnswerEvaluationPolling = (
+  interviewId: string,
+  audioPath: React.MutableRefObject<string | null>,
+  onComplete: (data: any) => void,
+  handleEvaluationStatus: (status: string) => void,
+) => {
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const isPolling = useRef(false);
+  const abortController = useRef<AbortController | null>(null);
+
+  const stopPolling = useCallback(() => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+      pollingInterval.current = null;
+      isPolling.current = false;
+    }
+
+    if (abortController.current) {
+      abortController.current.abort();
+      abortController.current = null;
+    }
+  }, []);
+
+  const checkEvaluationStatus = useCallback(async () => {
+    if (!audioPath.current) {
+      stopPolling();
+      return;
+    }
+
+    try {
+      abortController.current = new AbortController();
+      const signal = abortController.current.signal;
+      const res = await api.get(`/interview/evaluation-status/`, {
+        params: {
+          interview_id: interviewId,
+          audio_path: encodeURIComponent(audioPath.current),
+        },
+        signal,
+      });
+
+      if (res.data.status === 'preparing_result') {
+        stopPolling();
+        audioPath.current = null;
+        window.location.href = `/dashboard/interview/${interviewId}`;
+        return;
+      } else if (res.data.status === 'evaluation_completed') {
+        stopPolling();
+        audioPath.current = null;
+        onComplete(res.data);
+      } else if (res.data.status === 'error') {
+        stopPolling();
+        audioPath.current = null;
+        onComplete('Unable to parse your response , can you  explain again');
+      }
+
+      handleEvaluationStatus(res.data.status);
+    } catch (error) {
+      console.error('Error checking evaluation status:', error);
+    } finally {
+      abortController.current = null;
+    }
+  }, [interviewId, audioPath, onComplete, stopPolling]);
+
+  const startPolling = useCallback(() => {
+    if (isPolling.current) {
+      return;
+    }
+
+    if (!audioPath.current) {
+      return;
+    }
+
+    isPolling.current = true;
+    checkEvaluationStatus();
+
+    // Then poll every 2 seconds
+    pollingInterval.current = setInterval(() => {
+      checkEvaluationStatus();
+    }, 3000);
+  }, [checkEvaluationStatus, audioPath]);
+
+  return { startPolling, stopPolling, isPolling: isPolling.current };
+};
 
 const InterviewPage = ({
   params,
@@ -15,92 +172,151 @@ const InterviewPage = ({
 }) => {
   const { user } = useAuth();
   const { interviewId } = use(params);
-  const [isRecording, setIsRecording] = useState(false);
-  const [remainingTime, setRemainingTime] = useState<number | null>(null); // interview timer
+  const [turn, setTurn] = useState(Turn.INTERVIEWER);
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const router = useRouter();
+  const audioPath = useRef<string | null>(null);
+  const hasInitialized = useRef(false);
+  const lastAudioBlob = useRef<Blob | null>(null);
+  const [uploadFailed, setUploadFailed] = useState(false);
 
-  const {
-    data: interview,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['interview', interviewId],
-    queryFn: async () => {
-      const res = await api.get(`/interview/${interviewId}`);
-      return res.data;
-    },
-  });
+  const handleEvaluationComplete = useCallback((data: any) => {
+    if (data.evaluation_payload) {
+      const interviewer_res = (data.evaluation_payload as InterviewerResponse)
+        .interviewer_res;
+      const utterance = speakMessage(interviewer_res.question);
 
-  useEffect(() => {
-    if (interview?.rem_duration) {
-      // Convert minutes to seconds
-      setRemainingTime(interview.rem_duration * 60);
+      if (utterance) {
+        utterance.onend = () => {
+          setTurn(Turn.INTERMEDIATE);
+        };
+      }
     }
-  }, [interview]);
+  }, []);
+
+  const [evaluationStatus, setEvaluationStatus] = useState('');
+  const handleEvaluationStatus = (status: string) => {
+    if (status != evaluationStatus) {
+      setEvaluationStatus(() => {
+        return status;
+      });
+    }
+  };
+  const { startPolling, stopPolling } = useAnswerEvaluationPolling(
+    interviewId,
+    audioPath,
+    handleEvaluationComplete,
+    handleEvaluationStatus,
+  );
 
   useEffect(() => {
-    if (remainingTime === null) return;
-    if (remainingTime <= 0) return;
-
+    if (remainingTime === null || remainingTime <= 0) return;
     const interval = setInterval(() => {
       setRemainingTime((prev) => (prev && prev > 0 ? prev - 1 : 0));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [remainingTime]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const {
+    data: interviewMetaData,
+    isLoading,
+    error,
+    isSuccess,
+  } = useQuery({
+    queryKey: ['interview', interviewId],
+    queryFn: async (): Promise<InterviewMetaData> => {
+      const res = await api.get(`/interview/${interviewId}`);
+      return res.data;
+    },
+    staleTime: Infinity,
+  });
 
-  const interviewee = {
-    id: user?.id || '1',
-    name: user?.name || 'Interviewer',
-    avatar_url: user?.avatar_url,
-    muted: true,
-  };
-  const interviewer = {
-    id: '2',
-    name: interview?.interviewer_name || 'Interviewee',
-    avatar_url: interview?.interviewer_name || 'Interviewee',
-    muted: false,
-  };
+  useEffect(() => {
+    if (interviewMetaData && !hasInitialized.current) {
+      hasInitialized.current = true;
+      const endTime = new Date(interviewMetaData.end_time);
+      const now = new Date();
+      const remainingSeconds = Math.floor(
+        (endTime.getTime() - now.getTime()) / 1000,
+      );
+      setRemainingTime(remainingSeconds);
+      const isConfirm = window.confirm(
+        'give your introduction and start interview',
+      );
+
+      if (isConfirm) {
+        setTurn(Turn.INTERVIEWEE);
+        startRecording();
+      }
+    }
+  }, [interviewMetaData]);
 
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<BlobPart[]>([]);
   const [audioUrl, setAudioUrl] = useState('');
 
+  const uploadAudio = async (blob: Blob) => {
+    try {
+      setUploadFailed(false);
+
+      const formData = new FormData();
+      formData.append('file', blob, 'interview.webm');
+      formData.append('interview_id', interviewId);
+
+      const uploadAudioRes = await api({
+        method: 'POST',
+        data: formData,
+        url: '/upload',
+      });
+
+      if (!uploadAudioRes.data) {
+        throw new Error('Upload failed');
+      }
+
+      audioPath.current = uploadAudioRes.data.audio_path;
+      handleEvaluationStatus('Uploading audio');
+      startPolling();
+    } catch (error) {
+      toast('Audio upload failed. Please retry.');
+      setUploadFailed(true);
+      throw error;
+    }
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recorder.current = new MediaRecorder(stream);
-
       recorder.current.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunks.current.push(e.data);
-        }
+        if (e.data.size > 0) chunks.current.push(e.data);
       };
 
-      recorder.current.onstop = () => {
+      recorder.current.onstop = async () => {
         const blob = new Blob(chunks.current, { type: 'audio/webm' });
+        lastAudioBlob.current = blob;
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         chunks.current = [];
         stream.getTracks().forEach((track) => track.stop());
+
+        try {
+          await uploadAudio(blob);
+        } catch (e) {
+          console.log(e);
+        }
       };
 
+      setTurn(Turn.INTERVIEWEE);
       recorder.current.start();
-      setIsRecording(true);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
   const stopRecording = () => {
     if (recorder.current && recorder.current.state !== 'inactive') {
       recorder.current.stop();
-      setIsRecording(false);
+      setTurn(Turn.INTERVIEWER);
     }
   };
 
@@ -120,80 +336,127 @@ const InterviewPage = ({
     );
   }
 
+  if (!user || !interviewMetaData) {
+    return;
+  }
+
   return (
-    <div className="min-h-screen bg-[#101114] text-white flex flex-col">
-      <div className="flex items-center justify-between bg-[#1D1F23] px-6 py-4">
+    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col">
+      <div className="flex items-center justify-between bg-[#1D1F23] px-6 py-4 border-b border-gray-700">
         <div className="flex items-center gap-3">
           <span className="w-6 h-6 rounded-md bg-green-500 flex items-center justify-center">
             📡
           </span>
           <span className="font-semibold">
-            Job Title : {interview?.job_title}
+            Job Title: {interviewMetaData.job_title}
           </span>
         </div>
-        <Button variant="destructive" className="text-white">
+        <Button
+          variant="destructive"
+          className="text-white hover:bg-red-600 transition-colors"
+        >
           End interview
         </Button>
       </div>
 
       <div className="flex-1 flex items-center justify-center gap-10 px-10 py-8">
-        <div className="relative bg-[#222428] rounded-2xl w-[440px] aspect-[4/3] flex flex-col items-center justify-center border-sidebar-primary border-2">
+        <div
+          className={cn(
+            'relative bg-[#1B1C20] rounded-2xl w-[440px] aspect-[4/3] flex flex-col items-center justify-center transition-all duration-300',
+            turn === Turn.INTERVIEWEE && 'ring-4 ring-green-500',
+          )}
+        >
           <Avatar className="w-32 h-32">
+            <AvatarImage src={user.avatar_url} />
             <AvatarFallback className="text-4xl uppercase">
-              {interviewee.name.slice(0, 2)}
+              {user.name.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <span className="mt-3 text-sm">{interviewee.name}(You)</span>
+          <span className="mt-3 text-sm">{user.name} (You)</span>
+          {turn === Turn.INTERVIEWEE && <VoiceIndicator color="green" />}
         </div>
-        <div className="relative bg-[#222428] rounded-2xl w-[440px] aspect-[4/3] flex flex-col items-center opacity-70 justify-center">
+
+        <div
+          className={cn(
+            'relative bg-[#1B1C20] rounded-2xl w-[440px] aspect-[4/3] flex flex-col items-center justify-center transition-all duration-300',
+            (turn === Turn.INTERVIEWER || turn === Turn.INTERMEDIATE) &&
+              'ring-4 ring-blue-500',
+          )}
+        >
           <Avatar className="w-40 h-40">
-            <AvatarImage src={interviewer.avatar_url} />
+            <AvatarImage
+              src={
+                'https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=1024x1024&w=is&k=20&c=oGqYHhfkz_ifeE6-dID6aM7bLz38C6vQTy1YcbgZfx8='
+              }
+            />
             <AvatarFallback className="text-4xl uppercase">
-              {interviewer.name.slice(0, 2)}
+              {interviewMetaData.interviewer_name.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <span className="mt-3 text-sm">{interviewer.name}</span>
-          {interviewer.muted && (
-            <div className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-md">
-              <MicOff className="w-5 h-5 text-white" />
+          <span className="mt-3 text-sm">
+            {interviewMetaData.interviewer_name}
+          </span>
+          {(turn === Turn.INTERVIEWER || turn === Turn.INTERMEDIATE) && (
+            <div className="absolute bottom-3 right-3 text-gray-300 text-sm flex items-center gap-1">
+              <span className="italic text-sky-500">{evaluationStatus}</span>
+              {/* <VoiceIndicator color="blue" /> */}
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-6 py-4">
-        <span>
-          {remainingTime !== null
-            ? formatTime(remainingTime)
-            : `${interview?.rem_duration}:00`}
+      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700">
+        <span className="text-lg font-mono text-gray-300">
+          {remainingTime !== null ? formatTime(remainingTime) : `00:00`}
         </span>
 
-        <div className="flex gap-3">
-          {isRecording ? (
+        <div className="flex flex-col items-center gap-3">
+          {turn === Turn.INTERVIEWEE ? (
             <Button
               onClick={stopRecording}
-              className="relative flex items-center gap-2 px-6 py-3 text-lg shadow-md rounded-full transition-all bg-green-500 text-black hover:bg-green-600 animate-pulse"
+              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-red-500 hover:bg-red-600 transition-all text-white shadow-lg"
             >
-              <SquareStop size={28} color="red" />
+              <SquareStop size={24} />
               Stop
             </Button>
+          ) : turn === Turn.INTERMEDIATE ? (
+            <>
+              <p className="text-gray-300 mb-2 italic text-sm">
+                Click “Start Speaking” to answer.
+              </p>
+              <Button
+                onClick={startRecording}
+                className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-green-500 hover:bg-green-600 transition-all text-black shadow-lg"
+              >
+                <Mic size={24} />
+                Start Speaking
+              </Button>
+            </>
           ) : (
             <Button
-              onClick={startRecording}
-              className="flex items-center gap-2 px-6 py-3 text-lg shadow-md rounded-full transition-all bg-green-500 text-black hover:bg-green-600"
+              disabled
+              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-gray-700 text-gray-300 cursor-not-allowed"
             >
-              <Mic size={28} />
-              Start Speaking
+              <MicOff size={24} />
+              Waiting for Interviewer...
             </Button>
           )}
-          {audioUrl && (
-            <div className="mt-4">
-              <h3 className="text-sm font-medium mb-1">Preview:</h3>
-              <audio controls src={audioUrl}></audio>
-            </div>
+
+          {uploadFailed && (
+            <Button
+              onClick={async () => {
+                if (!lastAudioBlob.current) return;
+                await uploadAudio(lastAudioBlob.current);
+              }}
+              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-green-500 hover:bg-green-600 transition-all text-black shadow-lg"
+            >
+              <Repeat size={24} />
+              Retry
+            </Button>
           )}
         </div>
-        <div className="opacity-50 text-lg">ⓘ</div>
+
+        <div className="opacity-50 text-lg select-none">ⓘ</div>
       </div>
     </div>
   );

@@ -31,7 +31,7 @@ export const sidebarData = {
     },
     {
       title: 'Past Interviews',
-      url: '/dashboard/past-interviews',
+      url: '/dashboard/interview',
       icon: IconHistory,
     },
     { title: 'Job applications', url: '#', icon: IconBriefcase },
