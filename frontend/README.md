@@ -7,7 +7,7 @@
 3. Install dependencies
 
 ```
-npm install
+pnpm install
 ```
 
 4. Create environment file
@@ -19,7 +19,7 @@ cp .env.example .env
 5. Run the application
 
 ```
-npm run dev
+pnpm dev
 ```
 
 6. Open in browser
