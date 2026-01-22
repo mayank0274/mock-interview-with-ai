@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { MicPermissionDialog } from '@/components/MicPermissionDialog';
 
 enum Turn {
   INTERVIEWER = 'interviewer',
@@ -44,7 +45,7 @@ function speakMessage(message: string) {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(message);
   utterance.lang = 'en-IN';
-  utterance.rate = 1;
+  utterance.rate = 0.7;
   utterance.pitch = 1;
   utterance.volume = 1;
   window.speechSynthesis.speak(utterance);
@@ -72,7 +73,7 @@ const VoiceIndicator = ({ color = 'green' }: { color?: string }) => (
         key={i}
         className={cn(
           'w-1 rounded-full',
-          color === 'blue' ? 'bg-blue-400' : 'bg-green-400',
+          color === 'blue' ? 'bg-chart-2' : 'bg-primary',
         )}
         animate={{ height: [6, 14, 6] }}
         transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.1 }}
@@ -179,6 +180,7 @@ const InterviewPage = ({
   const hasInitialized = useRef(false);
   const lastAudioBlob = useRef<Blob | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
+  const [showMicDialog, setShowMicDialog] = useState(false);
 
   const handleEvaluationComplete = useCallback((data: any) => {
     if (data.evaluation_payload) {
@@ -222,6 +224,7 @@ const InterviewPage = ({
     isLoading,
     error,
     isSuccess,
+    refetch: refetchMetaData,
   } = useQuery({
     queryKey: ['interview', interviewId],
     queryFn: async (): Promise<InterviewMetaData> => {
@@ -233,6 +236,11 @@ const InterviewPage = ({
 
   useEffect(() => {
     if (interviewMetaData && !hasInitialized.current) {
+      if (!interviewMetaData.end_time) {
+        setShowMicDialog(true);
+        return;
+      }
+
       hasInitialized.current = true;
       const endTime = new Date(interviewMetaData.end_time);
       const now = new Date();
@@ -240,14 +248,10 @@ const InterviewPage = ({
         (endTime.getTime() - now.getTime()) / 1000,
       );
       setRemainingTime(remainingSeconds);
-      const isConfirm = window.confirm(
-        'give your introduction and start interview',
-      );
 
-      if (isConfirm) {
-        setTurn(Turn.INTERVIEWEE);
-        startRecording();
-      }
+      setShowMicDialog(false);
+      setTurn(Turn.INTERVIEWEE);
+      startRecording();
     }
   }, [interviewMetaData]);
 
@@ -322,7 +326,7 @@ const InterviewPage = ({
 
   if (isLoading) {
     return (
-      <div className="text-white flex items-center justify-center h-screen">
+      <div className="text-foreground flex items-center justify-center h-screen">
         Loading interview details...
       </div>
     );
@@ -330,7 +334,7 @@ const InterviewPage = ({
 
   if (error) {
     return (
-      <div className="text-red-400 flex items-center justify-center h-screen">
+      <div className="text-destructive flex items-center justify-center h-screen">
         {(error as { errorMsg: string }).errorMsg}
       </div>
     );
@@ -341,49 +345,49 @@ const InterviewPage = ({
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white flex flex-col">
-      <div className="flex items-center justify-between bg-[#1D1F23] px-6 py-4 border-b border-gray-700">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <div className="flex items-center justify-between bg-card px-4 md:px-6 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <span className="w-6 h-6 rounded-md bg-green-500 flex items-center justify-center">
+          <span className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
             📡
           </span>
-          <span className="font-semibold">
+          <span className="font-semibold text-sm md:text-base">
             Job Title: {interviewMetaData.job_title}
           </span>
         </div>
         <Button
           variant="destructive"
-          className="text-white hover:bg-red-600 transition-colors"
+          className="hover:bg-destructive/90 transition-colors"
         >
           End interview
         </Button>
       </div>
 
-      <div className="flex-1 flex items-center justify-center gap-10 px-10 py-8">
+      <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 px-4 md:px-10 py-8">
         <div
           className={cn(
-            'relative bg-[#1B1C20] rounded-2xl w-[440px] aspect-[4/3] flex flex-col items-center justify-center transition-all duration-300',
-            turn === Turn.INTERVIEWEE && 'ring-4 ring-green-500',
+            'relative bg-card rounded-2xl w-full max-w-[440px] aspect-[4/3] flex flex-col items-center justify-center transition-all duration-300 border border-border',
+            turn === Turn.INTERVIEWEE && 'ring-4 ring-primary',
           )}
         >
-          <Avatar className="w-32 h-32">
+          <Avatar className="w-24 h-24 md:w-32 md:h-32">
             <AvatarImage src={user.avatar_url} />
             <AvatarFallback className="text-4xl uppercase">
               {user.name.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <span className="mt-3 text-sm">{user.name} (You)</span>
+          <span className="mt-3 text-sm font-medium">{user.name} (You)</span>
           {turn === Turn.INTERVIEWEE && <VoiceIndicator color="green" />}
         </div>
 
         <div
           className={cn(
-            'relative bg-[#1B1C20] rounded-2xl w-[440px] aspect-[4/3] flex flex-col items-center justify-center transition-all duration-300',
+            'relative bg-card rounded-2xl w-full max-w-[440px] aspect-[4/3] flex flex-col items-center justify-center transition-all duration-300 border border-border',
             (turn === Turn.INTERVIEWER || turn === Turn.INTERMEDIATE) &&
-              'ring-4 ring-blue-500',
+              'ring-4 ring-chart-2',
           )}
         >
-          <Avatar className="w-40 h-40">
+          <Avatar className="w-32 h-32 md:w-40 md:h-40">
             <AvatarImage
               src={
                 'https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=1024x1024&w=is&k=20&c=oGqYHhfkz_ifeE6-dID6aM7bLz38C6vQTy1YcbgZfx8='
@@ -393,20 +397,20 @@ const InterviewPage = ({
               {interviewMetaData.interviewer_name.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <span className="mt-3 text-sm">
+          <span className="mt-3 text-sm font-medium">
             {interviewMetaData.interviewer_name}
           </span>
           {(turn === Turn.INTERVIEWER || turn === Turn.INTERMEDIATE) && (
-            <div className="absolute bottom-3 right-3 text-gray-300 text-sm flex items-center gap-1">
-              <span className="italic text-sky-500">{evaluationStatus}</span>
+            <div className="absolute bottom-3 right-3 text-muted-foreground text-sm flex items-center gap-1">
+              <span className="italic text-chart-2">{evaluationStatus}</span>
               {/* <VoiceIndicator color="blue" /> */}
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700">
-        <span className="text-lg font-mono text-gray-300">
+      <div className="flex items-center justify-between px-4 md:px-6 py-4 border-t border-border">
+        <span className="text-lg font-mono text-muted-foreground">
           {remainingTime !== null ? formatTime(remainingTime) : `00:00`}
         </span>
 
@@ -414,19 +418,19 @@ const InterviewPage = ({
           {turn === Turn.INTERVIEWEE ? (
             <Button
               onClick={stopRecording}
-              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-red-500 hover:bg-red-600 transition-all text-white shadow-lg"
+              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-destructive hover:bg-destructive/90 transition-all text-destructive-foreground shadow-lg"
             >
               <SquareStop size={24} />
               Stop
             </Button>
           ) : turn === Turn.INTERMEDIATE ? (
             <>
-              <p className="text-gray-300 mb-2 italic text-sm">
+              <p className="text-muted-foreground mb-2 italic text-sm text-center">
                 Click “Start Speaking” to answer.
               </p>
               <Button
                 onClick={startRecording}
-                className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-green-500 hover:bg-green-600 transition-all text-black shadow-lg"
+                className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-primary hover:bg-primary/90 transition-all text-primary-foreground shadow-lg"
               >
                 <Mic size={24} />
                 Start Speaking
@@ -435,7 +439,7 @@ const InterviewPage = ({
           ) : (
             <Button
               disabled
-              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-gray-700 text-gray-300 cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-muted text-muted-foreground cursor-not-allowed"
             >
               <MicOff size={24} />
               Waiting for Interviewer...
@@ -448,7 +452,7 @@ const InterviewPage = ({
                 if (!lastAudioBlob.current) return;
                 await uploadAudio(lastAudioBlob.current);
               }}
-              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-green-500 hover:bg-green-600 transition-all text-black shadow-lg"
+              className="flex items-center gap-2 px-6 py-3 text-lg rounded-full bg-primary hover:bg-primary/90 transition-all text-primary-foreground shadow-lg"
             >
               <Repeat size={24} />
               Retry
@@ -456,8 +460,17 @@ const InterviewPage = ({
           )}
         </div>
 
-        <div className="opacity-50 text-lg select-none">ⓘ</div>
+        <div className="opacity-50 text-lg select-none text-muted-foreground">
+          ⓘ
+        </div>
       </div>
+      <MicPermissionDialog
+        open={showMicDialog}
+        interviewId={interviewId}
+        onInterviewStarted={() => {
+          refetchMetaData();
+        }}
+      />
     </div>
   );
 };

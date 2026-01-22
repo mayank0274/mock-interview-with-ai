@@ -18,8 +18,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import SidebarWrapper from '@/components/layout/SidebarWrapper';
 import { api } from '@/http/api';
-import { ConfirmStart } from '../create-interview/page';
-import { useRef, useState } from 'react';
 
 type Interview = {
   id: string;
@@ -36,8 +34,6 @@ export default function InterviewsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const page = Number(searchParams.get('page_no') ?? 1);
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const pendingInterviewIdRef = useRef('');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['interviews', page],
@@ -124,8 +120,7 @@ export default function InterviewsPage() {
                     if (i.status === 'completed') {
                       router.push(`/dashboard/interview/${i.id}`);
                     } else if (i.status === 'created') {
-                      pendingInterviewIdRef.current = i.id;
-                      setIsConfirmDialogOpen(true);
+                      router.push(`/interview/${i.id}`);
                     } else {
                       alert('Result not prepared');
                     }
@@ -190,11 +185,6 @@ export default function InterviewsPage() {
           </div>
         </div>
       </div>
-      <ConfirmStart
-        open={isConfirmDialogOpen}
-        setIsOpen={setIsConfirmDialogOpen}
-        interviewId={pendingInterviewIdRef.current}
-      />
     </SidebarWrapper>
   );
 }

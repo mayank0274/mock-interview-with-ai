@@ -1,68 +1,108 @@
 'use client';
-
 import * as React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Menu, X, ArrowRight } from 'lucide-react';
+import { Menu, X, Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import LOGO from '@/assets/logo.png';
 import GoogleIcon from '@/assets/google-icon.svg';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/userContext';
+import { useScroll, useMotionValueEvent } from 'framer-motion';
 
 export function Navbar() {
   const [open, setOpen] = React.useState(false);
   const { user } = useAuth();
   const pathname = usePathname();
+  const { scrollY } = useScroll();
+  const [scrolled, setScrolled] = React.useState(false);
+
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    setScrolled(latest > 50);
+  });
 
   if (pathname.includes('dashboard') || pathname.includes('interview')) {
     return null;
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
+    <header
+      className={cn(
+        'fixed top-0 z-50 w-full transition-all duration-300 bg-transparent',
+        scrolled
+          ? 'bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm'
+          : 'bg-transparent border-transparent',
+      )}
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
-        <Link
-          href="/"
-          className="flex items-center gap-2 transition-transform duration-300 hover:scale-105"
-        >
-          <Image
-            src={LOGO}
-            alt="interviewaly.ai logo"
-            width={150}
-            height={100}
-            priority
-          />
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="relative">
+            <Image
+              src={LOGO}
+              alt="interviewaly.ai logo"
+              width={140}
+              height={90}
+              priority
+              className="transition-transform duration-300 group-hover:scale-105"
+            />
+            {/* <div className="absolute -inset-2 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" /> */}
+          </div>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-10">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-8">
           <NavLink href="/features">Features</NavLink>
           <NavLink href="/pricing">Pricing</NavLink>
           <NavLink href="/testimonials">Testimonials</NavLink>
         </nav>
 
-        <div className="hidden md:flex items-center">
+        {/* CTA Actions */}
+        <div className="hidden md:flex items-center gap-4">
           {user?.email ? (
-            <Link href={'/dashboard/create-interview'}>Dashboard</Link>
-          ) : (
-            <Link
-              href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
-              className="group flex bg-transparent items-center text-sm font-medium px-3 py-2 rounded-md transition-all duration-300 hover:bg-accent hover:text-primary-foreground"
-            >
-              <Image
-                src={GoogleIcon}
-                alt="Google"
-                width={20}
-                height={20}
-                className="mr-1"
-              />{' '}
-              Log in
-              <ArrowRight className="ml-1 h-4 w-4 transform transition-transform duration-300 group-hover:translate-x-1" />
+            <Link href={'/dashboard/create-interview'}>
+              <Button
+                variant="default"
+                className="bg-primary hover:bg-primary/90 rounded-full px-6"
+              >
+                Go to Dashboard
+              </Button>
             </Link>
+          ) : (
+            <>
+              {/* <Link href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Sign in
+                </Link> */}
+              <Link
+                href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
+                className="group flex items-center gap-2"
+              >
+                <Button
+                  variant="outline"
+                  className="rounded-full border-primary/20 hover:bg-primary/5 hover:border-primary/50 transition-all duration-300"
+                >
+                  <Image
+                    src={GoogleIcon}
+                    alt="Google"
+                    width={18}
+                    height={18}
+                    className="mr-1"
+                  />
+                  <span>Log in</span>
+                  {/* <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" /> */}
+                </Button>
+              </Link>
+              <Link href="https://github.com/mayank0274/mock-interview-with-ai">
+                <Button className="rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)] hover:shadow-[0_0_25px_-5px_rgba(255,255,255,0.5)]">
+                  Github
+                  <Github className="w-3 h-3 ml-2 text-primary" />
+                </Button>
+              </Link>
+            </>
           )}
         </div>
 
+        {/* Mobile Menu Toggle */}
         <Button
           variant="ghost"
           size="icon"
@@ -70,34 +110,50 @@ export function Navbar() {
           onClick={() => setOpen(!open)}
           aria-label="Toggle menu"
         >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
       </div>
 
+      {/* Mobile Menu */}
       {open && (
-        <div className="md:hidden border-t border-border bg-background px-4 pb-4 animate-fadeIn">
-          <div className="flex flex-col space-y-3 pt-2">
+        <div className="absolute top-full left-0 w-full border-b border-border bg-background/95 backdrop-blur-xl px-4 pb-6 shadow-xl animate-in slide-in-from-top-2 md:hidden">
+          <div className="flex flex-col space-y-4 pt-4">
             <MobileNavLink href="/features">Features</MobileNavLink>
             <MobileNavLink href="/pricing">Pricing</MobileNavLink>
             <MobileNavLink href="/testimonials">Testimonials</MobileNavLink>
-            {user?.email ? (
-              <Link href={'/dashboard/create-interview'}>Dashboard</Link>
-            ) : (
-              <Link
-                href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
-                className="w-max group flex items-center text-sm font-medium px-3 py-2 rounded-md transition-all duration-300 bg-transparent hover:bg-accent hover:text-primary-foreground"
-              >
-                <Image
-                  src={GoogleIcon}
-                  alt="Google"
-                  width={20}
-                  height={20}
-                  className="mr-1"
-                />
-                Log in
-                <ArrowRight className="ml-1 h-4 w-4 transform transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            )}
+            <div className="pt-4 border-t border-border/50 flex flex-col gap-3">
+              {user?.email ? (
+                <Link href={'/dashboard/create-interview'}>
+                  <Button className="w-full justify-center">Dashboard</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
+                    className="w-full"
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full justify-center gap-2"
+                    >
+                      <Image
+                        src={GoogleIcon}
+                        alt="Google"
+                        width={18}
+                        height={18}
+                      />
+                      Log in
+                    </Button>
+                  </Link>
+                  <Link href="https://github.com/mayank0274/mock-interview-with-ai">
+                    <Button className="w-full justify-center gap-2">
+                      Github
+                      <Github className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -115,12 +171,10 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={cn(
-        'text-sm font-medium transition-colors hover:text-primary',
-        'text-foreground',
-      )}
+      className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground group py-2"
     >
       {children}
+      <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-primary transition-all duration-300 group-hover:w-full" />
     </Link>
   );
 }
@@ -135,7 +189,7 @@ function MobileNavLink({
   return (
     <Link
       href={href}
-      className="block text-base font-medium hover:text-primary transition-colors"
+      className="block text-lg font-medium text-foreground/80 hover:text-primary transition-colors p-2 rounded-md hover:bg-muted"
     >
       {children}
     </Link>

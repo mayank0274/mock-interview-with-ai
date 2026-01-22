@@ -10,7 +10,6 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
   display: 'swap',
-  weight: ['400', '500', '800'], // Regular, Medium, ExtraBold
 });
 
 export const metadata: Metadata = {

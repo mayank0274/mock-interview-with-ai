@@ -48,20 +48,20 @@ export default function InterviewResultsPage({
       <SidebarWrapper>
         <Link
           href={'/dashboard/interview'}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           <span className="text-sm">Interviews</span>
         </Link>
-        <div className="min-h-screen bg-[#0a0a0a] p-8">
+        <div className="min-h-screen bg-background p-8">
           <div className="max-w-7xl mx-auto space-y-8">
-            <Skeleton className="h-10 w-64 bg-[#1f2937]" />
+            <Skeleton className="h-10 w-64" />
             <div className="grid grid-cols-3 gap-6">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-40 w-full bg-[#1f2937]" />
+                <Skeleton key={i} className="h-40 w-full" />
               ))}
             </div>
-            <Skeleton className="h-96 w-full bg-[#1f2937]" />
+            <Skeleton className="h-96 w-full" />
           </div>
         </div>
       </SidebarWrapper>
@@ -73,13 +73,13 @@ export default function InterviewResultsPage({
       <SidebarWrapper>
         <Link
           href={'/dashboard/interview'}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           <span className="text-sm">Interviews</span>
         </Link>
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-          <p className="text-gray-400">No results available.</p>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-muted-foreground">No results available.</p>
         </div>
       </SidebarWrapper>
     );
@@ -93,11 +93,11 @@ export default function InterviewResultsPage({
 
   return (
     <SidebarWrapper>
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto p-6 space-y-6">
           <Link
             href={'/dashboard/interview'}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="text-sm">Interviews</span>
@@ -105,14 +105,14 @@ export default function InterviewResultsPage({
 
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-bold text-white">
+              <h1 className="text-4xl font-bold text-foreground">
                 {data.job_title}
               </h1>
-              <span className="px-3 py-1 rounded-md bg-green-500/10 text-green-400 text-xs font-medium">
+              <span className="px-3 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
                 {data.status}
               </span>
             </div>
-            <p className="text-gray-500 text-sm">
+            <p className="text-muted-foreground text-sm">
               {formatDistanceToNow(new Date(data.end_time), {
                 addSuffix: true,
               })}
@@ -123,9 +123,9 @@ export default function InterviewResultsPage({
             {scores.map((score) => (
               <div
                 key={score.name}
-                className="bg-[#1a1a1a] rounded-lg p-5 space-y-4 border border-[#2a2a2a]"
+                className="bg-card rounded-lg p-5 space-y-4 border border-border shadow-sm"
               >
-                <h3 className="text-sm font-normal text-gray-400">
+                <h3 className="text-sm font-normal text-muted-foreground">
                   {score.name}
                 </h3>
                 <div className="relative w-24 h-24 mx-auto">
@@ -134,24 +134,25 @@ export default function InterviewResultsPage({
                       cx="48"
                       cy="48"
                       r="42"
-                      stroke="#2a2a2a"
+                      stroke="currentColor"
                       strokeWidth="6"
                       fill="none"
+                      className="text-muted"
                     />
                     <circle
                       cx="48"
                       cy="48"
                       r="42"
-                      stroke="#4c7cff"
+                      stroke="currentColor"
                       strokeWidth="6"
                       fill="none"
                       strokeDasharray={`${(score.value / 10) * 263.9} 263.9`}
-                      className="transition-all duration-1000"
+                      className="transition-all duration-1000 text-primary"
                       strokeLinecap="round"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-semibold text-white">
+                    <span className="text-2xl font-semibold text-foreground">
                       {Math.round((score.value / 10) * 100)}%
                     </span>
                   </div>
@@ -161,9 +162,9 @@ export default function InterviewResultsPage({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
-              <div className="p-4 border-b border-[#2a2a2a]">
-                <h2 className="text-lg font-semibold text-white">
+            <div className="bg-card rounded-lg border border-border shadow-sm">
+              <div className="p-4 border-b border-border">
+                <h2 className="text-lg font-semibold text-card-foreground">
                   Interview conversation
                 </h2>
               </div>
@@ -171,25 +172,25 @@ export default function InterviewResultsPage({
                 {data.chats && data.chats.length > 0 ? (
                   data.chats.reverse().map((chat, i) => (
                     <div key={i} className="space-y-2">
-                      <div className="text-xs font-semibold text-gray-400">
-                        {chat.type === 'ai' ? `Interviewr` : 'You'}
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        {chat.type === 'ai' ? `Interviewer` : 'You'}
                       </div>
-                      <div className="bg-[#0f0f0f] rounded-lg p-3 text-sm text-gray-300 leading-relaxed border border-[#2a2a2a]">
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm text-foreground leading-relaxed border border-border">
                         {chat.content}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-12 text-sm">
+                  <p className="text-muted-foreground text-center py-12 text-sm">
                     No conversation available.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
-              <div className="p-4 border-b border-[#2a2a2a]">
-                <h2 className="text-lg font-semibold text-white">
+            <div className="bg-card rounded-lg border border-border shadow-sm">
+              <div className="p-4 border-b border-border">
+                <h2 className="text-lg font-semibold text-card-foreground">
                   Suggestions
                 </h2>
               </div>
@@ -201,9 +202,9 @@ export default function InterviewResultsPage({
                       .map((s, i) => (
                         <li
                           key={i}
-                          className="flex gap-3 text-sm text-gray-300 leading-relaxed"
+                          className="flex gap-3 text-sm text-foreground leading-relaxed"
                         >
-                          <span className="text-[#4c7cff] mt-0.5 flex-shrink-0">
+                          <span className="text-primary mt-0.5 flex-shrink-0">
                             •
                           </span>
                           <span>{s}</span>
@@ -211,7 +212,7 @@ export default function InterviewResultsPage({
                       ))}
                   </ul>
                 ) : (
-                  <p className="text-gray-500 text-center py-12 text-sm">
+                  <p className="text-muted-foreground text-center py-12 text-sm">
                     No suggestions available.
                   </p>
                 )}

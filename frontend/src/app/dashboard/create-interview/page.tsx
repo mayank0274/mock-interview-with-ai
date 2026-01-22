@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import JobTemplateDialog from '@/components/dashboard/JobTemplateDialog';
+import { JOB_TEMPLATES } from '@/constants/jobTemplates';
 
 export const ConfirmStart = ({
   open,
@@ -85,18 +87,27 @@ export const ConfirmStart = ({
 };
 
 export default function Page() {
+  const router = useRouter();
   const { user, setUser } = useAuth();
   const [interviewData, setInterviewData] = useState({
     jobTitle: '',
     jobDescription: '',
     interviewType: 'technical',
   });
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isTemplateDialogOpen, setTemplateDialogOpen] = useState(false);
+
+  const handleTemplateSelect = (template: (typeof JOB_TEMPLATES)[0]) => {
+    setInterviewData({
+      ...interviewData,
+      jobTitle: template.title,
+      jobDescription: template.description,
+      interviewType: template.type,
+    });
+  };
 
   const {
     mutate: createInterviewSession,
     isPending: isCreatingInterviewSession,
-    data: interviewDataRes,
   } = useMutation({
     mutationKey: ['create-interview'],
     mutationFn: async () => {
@@ -108,9 +119,10 @@ export default function Page() {
 
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast('Interview session created successfully');
-      setIsConfirmDialogOpen(true);
+      router.push(`/interview/${data.id}`);
+      // setIsConfirmDialogOpen(true);
       if (user?.credits_remaining) {
         setUser({ ...user, credits_remaining: user.credits_remaining - 1 });
       }
@@ -122,17 +134,20 @@ export default function Page() {
 
   return (
     <SidebarWrapper>
-      <div className="min-h-screen bg-sidebar text-sidebar-foreground">
+      <div className="min-h-screen bg-background text-foreground">
         <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <h1 className="text-xl sm:text-2xl font-semibold">
               Create an interview
             </h1>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-destructive">
+              <span className="text-sm text-primary font-medium">
                 {user?.credits_remaining} interviews left
               </span>
-              <Button className="bg-sidebar-accent hover:bg-sidebar-accent  text-sidebar font-medium px-4 py-2 rounded-md">
+              <Button
+                variant="outline"
+                className="font-medium px-4 py-2 rounded-md"
+              >
                 Buy more interviews
               </Button>
             </div>
@@ -141,9 +156,20 @@ export default function Page() {
           <div className="space-y-8">
             <div>
               <h2 className="text-lg font-medium mb-2">Interview details</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Give the job details you want to apply for
-              </p>
+              <div className="flex items-center gap-2 mb-6">
+                <p className="text-sm text-muted-foreground">
+                  Give the job details you want to apply for
+                </p>
+                <Button
+                  onClick={() => setTemplateDialogOpen(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary hover:text-primary hover:bg-primary/10 py-1 px-2 flex items-center"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Choose here
+                </Button>
+              </div>
 
               <div className="space-y-6">
                 <div>
@@ -157,7 +183,7 @@ export default function Page() {
                     value={interviewData.jobTitle}
                     id="job-title"
                     placeholder="Frontend Developer"
-                    className="bg-sidebar-border border-sidebar-border text-sidebar-foreground h-12"
+                    className="bg-muted/50 border-input text-foreground h-12 focus-visible:ring-primary"
                     onChange={(e) => {
                       setInterviewData({
                         ...interviewData,
@@ -176,23 +202,10 @@ export default function Page() {
                       Paste the job description here
                     </Label>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-muted-foreground m-0">
-                      Or choose from our templates
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-sidebar-primary hover:text-sidebar-primary hover:bg-sidebar-primary/10 py-1 px-2 flex items-center"
-                    >
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      Choose here
-                    </Button>
-                  </div>
                   <Textarea
                     value={interviewData.jobDescription}
                     id="job-description"
-                    className="bg-sidebar-border border-sidebar-border text-sidebar-foreground min-h-[200px] resize-none"
+                    className="bg-muted/50 border-input text-foreground min-h-[200px] resize-none focus-visible:ring-primary"
                     placeholder="e.g. We are seeking a React.js Developer to join our dynamic team in..."
                     onChange={(e) => {
                       setInterviewData({
@@ -207,11 +220,11 @@ export default function Page() {
 
             <div className="space-y-4">
               <RadioGroup defaultValue="technical">
-                <div className="flex items-start space-x-3 p-4 rounded-md border border-sidebar-border bg-sidebar-border/50">
+                <div className="flex items-start space-x-3 p-4 rounded-md border border-border bg-card">
                   <RadioGroupItem
                     value={interviewData.interviewType}
                     id="technical"
-                    className="mt-0.5"
+                    className="mt-0.5 border-primary text-primary"
                   />
                   <div className="flex-1">
                     <Label
@@ -219,7 +232,7 @@ export default function Page() {
                       className="text-base font-medium flex items-center gap-2 cursor-pointer"
                     >
                       Technical
-                      <span className="text-xs bg-sidebar-primary/20 text-sidebar-primary px-2 py-0.5 rounded">
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                         Problem solving
                       </span>
                     </Label>
@@ -234,7 +247,7 @@ export default function Page() {
             <div>
               <Button
                 disabled={user && user.credits_remaining <= 0 ? true : false}
-                className="bg-sidebar-accent hover:bg-sidebar-accent text-sidebar font-medium px-6 py-2 rounded-md"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-2 rounded-md transition-all shadow-md hover:shadow-lg"
                 onClick={() => {
                   createInterviewSession();
                 }}
@@ -249,10 +262,10 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <ConfirmStart
-        open={isConfirmDialogOpen}
-        setIsOpen={setIsConfirmDialogOpen}
-        interviewId={interviewDataRes?.id}
+      <JobTemplateDialog
+        open={isTemplateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        onSelect={handleTemplateSelect}
       />
     </SidebarWrapper>
   );
