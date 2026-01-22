@@ -29,6 +29,8 @@ from langchain_core.messages import HumanMessage, AIMessage
 from datetime import datetime, timezone
 from ..db.redis import redis_client, INTERVIEW_METADATA_EXPIRY
 from datetime import timedelta
+from ..inngest.client import inngest_client
+from inngest import Event
 
 INTERVIEW_DURATION_MINUTES = 10
 REDIS_BUFFER_SECONDS = 60
@@ -426,3 +428,42 @@ async def get_history(
     except Exception as e:
         print("Interview history", e)
         raise HTTPException(500, "Something went wrong while fetching history")
+
+
+@interviews_router.patch(
+    "/end/{interview_id}", description="manually end interview in-bteween"
+)
+async def end_interview(
+    interview_id: str, currUser: currentUserDep, session: sessionDep
+):
+    try:
+        interview_res = await session.execute(
+            select(InterviewSession).where(InterviewSession.id == interview_id)
+        )
+        interview = interview_res.scalars().first()
+
+        if not interview:
+            raise HTTPException(404, "Interview with given id does not exist")
+
+        if currUser.get("email") != interview.user_email:
+            raise HTTPException(403, "Access denied")
+
+        now = datetime.now(timezone.utc)
+
+        interview.end_time = now
+        await session.commit()
+
+        await inngest_client.send(
+            Event(
+                name="interview/interview.completed",
+                data={"interview_id": interview_id},
+            )
+        )
+
+        return {"message": "Result preperation started"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("Interview end Error:", e)
+        raise HTTPException(500, "Error starting ending session")

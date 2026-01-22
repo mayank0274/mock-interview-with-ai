@@ -4,9 +4,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mic, MicOff, Repeat, SquareStop } from 'lucide-react';
+import { Loader2, Mic, MicOff, Repeat, SquareStop } from 'lucide-react';
 import { useAuth } from '@/context/userContext';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/http/api';
 import { use } from 'react';
 import { cn } from '@/lib/utils';
@@ -14,31 +14,12 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { MicPermissionDialog } from '@/components/MicPermissionDialog';
-
-enum Turn {
-  INTERVIEWER = 'interviewer',
-  INTERMEDIATE = 'intermediate',
-  INTERVIEWEE = 'interviewee',
-}
-
-interface InterviewerResponse {
-  interviewer_res: {
-    question: string;
-    type: 'theory' | 'coding' | 'scenario' | 'follow_up' | 'clarification';
-    question_no: number;
-  };
-  redirect: boolean;
-}
-
-interface InterviewMetaData {
-  id: string;
-  user_email: string;
-  job_title: string;
-  job_description: string;
-  interview_type: string;
-  interviewer_name: string;
-  end_time: Date;
-}
+import { formatTime } from '@/lib/utils';
+import {
+  InterviewerResponse,
+  InterviewMetaData,
+  Turn,
+} from '@/types/interview.types';
 
 function speakMessage(message: string) {
   if (!('speechSynthesis' in window)) return;
@@ -51,12 +32,6 @@ function speakMessage(message: string) {
   window.speechSynthesis.speak(utterance);
   return utterance;
 }
-
-const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
 
 const VoiceIndicator = ({ color = 'green' }: { color?: string }) => (
   <motion.div
@@ -182,6 +157,7 @@ const InterviewPage = ({
   const [uploadFailed, setUploadFailed] = useState(false);
   const [showMicDialog, setShowMicDialog] = useState(false);
 
+  // handle evaluation related things
   const handleEvaluationComplete = useCallback((data: any) => {
     if (data.evaluation_payload) {
       const interviewer_res = (data.evaluation_payload as InterviewerResponse)
@@ -197,6 +173,7 @@ const InterviewPage = ({
   }, []);
 
   const [evaluationStatus, setEvaluationStatus] = useState('');
+
   const handleEvaluationStatus = (status: string) => {
     if (status != evaluationStatus) {
       setEvaluationStatus(() => {
@@ -204,6 +181,7 @@ const InterviewPage = ({
       });
     }
   };
+
   const { startPolling, stopPolling } = useAnswerEvaluationPolling(
     interviewId,
     audioPath,
@@ -211,13 +189,7 @@ const InterviewPage = ({
     handleEvaluationStatus,
   );
 
-  useEffect(() => {
-    if (remainingTime === null || remainingTime <= 0) return;
-    const interval = setInterval(() => {
-      setRemainingTime((prev) => (prev && prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [remainingTime]);
+  // handle interview metadata related things
 
   const {
     data: interviewMetaData,
@@ -233,6 +205,14 @@ const InterviewPage = ({
     },
     staleTime: Infinity,
   });
+
+  useEffect(() => {
+    if (remainingTime === null || remainingTime <= 0) return;
+    const interval = setInterval(() => {
+      setRemainingTime((prev) => (prev && prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [remainingTime]);
 
   useEffect(() => {
     if (interviewMetaData && !hasInitialized.current) {
@@ -255,6 +235,21 @@ const InterviewPage = ({
     }
   }, [interviewMetaData]);
 
+  const { mutate: endInterview, isPending: isEndingInterview } = useMutation({
+    mutationFn: async () => {
+      const res = await api.patch(`/interview/end/${interviewId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast(data.message);
+      router.push('/dashboard/interview');
+    },
+    onError: () => {
+      toast('Failed to end interview');
+    },
+  });
+
+  // handle audio recording related things
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<BlobPart[]>([]);
   const [audioUrl, setAudioUrl] = useState('');
@@ -341,7 +336,7 @@ const InterviewPage = ({
   }
 
   if (!user || !interviewMetaData) {
-    return;
+    return null;
   }
 
   return (
@@ -358,8 +353,14 @@ const InterviewPage = ({
         <Button
           variant="destructive"
           className="hover:bg-destructive/90 transition-colors"
+          onClick={() => endInterview()}
+          disabled={isEndingInterview}
         >
-          End interview
+          {isEndingInterview ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            'End interview'
+          )}
         </Button>
       </div>
 
@@ -403,7 +404,7 @@ const InterviewPage = ({
           {(turn === Turn.INTERVIEWER || turn === Turn.INTERMEDIATE) && (
             <div className="absolute bottom-3 right-3 text-muted-foreground text-sm flex items-center gap-1">
               <span className="italic text-chart-2">{evaluationStatus}</span>
-              {/* <VoiceIndicator color="blue" /> */}
+              {evaluationStatus === '' && <VoiceIndicator color="blue" />}
             </div>
           )}
         </div>
