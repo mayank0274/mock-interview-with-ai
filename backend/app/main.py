@@ -1,14 +1,15 @@
+import app.config
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from inngest.fast_api import serve
 from .db.pg_conn import init_db
 from starlette.middleware.sessions import SessionMiddleware
 from .router.auth import auth_router
 from .router.interviews import interviews_router
 from .db.redis import redis_client
 from .router.upload_files import upload_file_router
+from inngest.fast_api import serve
 from .inngest.client import inngest_client
 from .inngest.functions.transcription import transcription_workflow
 from .inngest.functions.evaluate_answer import (
