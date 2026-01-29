@@ -27,7 +27,7 @@ const Footer = () => {
 
       <div className="w-full flex justify-center items-center opacity-5 pointer-events-none select-none ">
         <h1 className="text-[10vw] md:text-[14vw] font-bold tracking-tighter text-foreground whitespace-nowrap leading-[0.8]">
-          Interviewaly
+          Interviewly
         </h1>
       </div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50vw] h-[50vw] bg-primary/5 rounded-full blur-[150px] -z-0 pointer-events-none" />

@@ -55,7 +55,7 @@ export default function InterviewsPage() {
             <Skeleton className="h-9 w-36" />
           </div>
           <div className="rounded-lg border bg-card/70 p-4 space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 15 }).map((_, i) => (
               <Skeleton key={i} className="h-9 w-full" />
             ))}
           </div>

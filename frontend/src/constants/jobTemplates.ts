@@ -54,47 +54,6 @@ Requirements:
 - Strong problem-solving skills and attention to detail`,
   },
   {
-    id: 'pm',
-    title: 'Product Manager',
-    type: 'behavioral',
-    description: `We are hiring a Product Manager to lead product development initiatives.
-
-Key Responsibilities:
-- Define product vision, strategy, and roadmap
-- Gather and prioritize product and customer requirements
-- Work closely with engineering, sales, marketing, and support teams
-- Analyze market trends and competition
-
-Requirements:
-- Proven work experience in product management
-- Strong problem-solving skills and willingness to roll up one's sleeves to get the job done
-- Excellent communication and teamwork skills
-- Experience with Agile/Scrum development methodologies`,
-  },
-  {
-    id: 'dsa-practice',
-    title: 'DSA Practice Candidate',
-    type: 'practice',
-    description: `We are looking for a motivated individual who wants to strengthen their Data Structures and Algorithms skills through consistent practice.
-
-Key Responsibilities:
-- Practice and solve DSA problems on a regular basis
-- Analyze time and space complexity of solutions
-- Implement solutions using a preferred programming language
-- Improve problem-solving and logical thinking skills
-- Revise previously solved problems for optimization
-
-Requirements:
-- Basic understanding of programming concepts
-- Familiarity with arrays, strings, recursion, and basic data structures
-- Willingness to learn and improve problem-solving skills
-- Consistency and discipline in daily practice
-
-Nice to Have:
-- Exposure to platforms like LeetCode, CodeChef, or GeeksforGeeks
-- Understanding of common algorithms and patterns`,
-  },
-  {
     id: 'generic',
     title: 'Generic Role',
     type: 'technical',

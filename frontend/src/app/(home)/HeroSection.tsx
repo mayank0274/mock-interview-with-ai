@@ -16,7 +16,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative w-full pt-32 pb-5 overflow-hidden">
+    <section className="relative w-full pt-20 md:pt-28 pb-5 overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div className="absolute top-[-10%] left-[20%] w-[40rem] h-[40rem] bg-primary/10 rounded-full blur-[100px] animate-pulse" />
         <div className="absolute top-[10%] right-[10%] w-[30rem] h-[30rem] bg-secondary/20 rounded-full blur-[100px]" />
@@ -47,7 +47,7 @@ const HeroSection = () => {
           <br className="hidden md:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary-foreground to-primary">
             {' '}
-            AI & Manage Applications
+            AI & Manage Job Applications Effectively
           </span>
         </motion.h1>
 
@@ -60,7 +60,7 @@ const HeroSection = () => {
           Practice interviews with real-time AI guidance, track every
           application, and land your dream job faster with
           <span className="font-semibold text-foreground ml-1">
-            interviewaly.ai
+            interviewly.ai
           </span>
           .
         </motion.p>

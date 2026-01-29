@@ -58,7 +58,10 @@ const testimonials = [
 
 const TestimonialSection = () => {
   return (
-    <section className="py-24 bg-muted/50 w-full relative overflow-hidden">
+    <section
+      id="testimonials"
+      className="py-24 bg-muted/50 w-full relative overflow-hidden"
+    >
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-20">
         <div className="absolute top-[20%] right-[30%] w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[10%] left-[10%] w-[25rem] h-[25rem] bg-secondary/5 rounded-full blur-[100px]" />

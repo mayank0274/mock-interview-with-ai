@@ -108,6 +108,7 @@ export default function Page() {
   const {
     mutate: createInterviewSession,
     isPending: isCreatingInterviewSession,
+    isSuccess: interviewCreatingSuccess,
   } = useMutation({
     mutationKey: ['create-interview'],
     mutationFn: async () => {
@@ -254,6 +255,8 @@ export default function Page() {
               >
                 {isCreatingInterviewSession ? (
                   <Loader2 className="w-4 h04 animate-spin" />
+                ) : interviewCreatingSuccess ? (
+                  'Redirecting...'
                 ) : (
                   'Continue'
                 )}

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import LOGO from '@/assets/logo.png';
 import GoogleIcon from '@/assets/google-icon.svg';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/userContext';
@@ -37,24 +36,15 @@ export function Navbar() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="relative">
-            <Image
-              src={LOGO}
-              alt="interviewaly.ai logo"
-              width={140}
-              height={90}
-              priority
-              className="transition-transform duration-300 group-hover:scale-105"
-            />
-            {/* <div className="absolute -inset-2 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" /> */}
-          </div>
+          <span className="text-xl md:text-2xl font-bold tracking-tight text-foreground bg-clip-text transition-all duration-300 group-hover:opacity-80">
+            Interviewly
+          </span>
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <NavLink href="/features">Features</NavLink>
-          <NavLink href="/pricing">Pricing</NavLink>
-          <NavLink href="/testimonials">Testimonials</NavLink>
+          <NavLink href="#how_it_works">How it works</NavLink>
+          <NavLink href="#testimonials">Testimonials</NavLink>
+          <NavLink href="#faq">Faqs</NavLink>
         </nav>
 
         {/* CTA Actions */}
@@ -92,9 +82,12 @@ export function Navbar() {
                   {/* <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" /> */}
                 </Button>
               </Link>
-              <Link href="https://github.com/mayank0274/mock-interview-with-ai">
+              <Link
+                target="_blank"
+                href="https://github.com/mayank0274/mock-interview-with-ai"
+              >
                 <Button className="rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)] hover:shadow-[0_0_25px_-5px_rgba(255,255,255,0.5)]">
-                  Github
+                  See On Github
                   <Github className="w-3 h-3 ml-2 text-primary" />
                 </Button>
               </Link>
@@ -118,9 +111,9 @@ export function Navbar() {
       {open && (
         <div className="absolute top-full left-0 w-full border-b border-border bg-background/95 backdrop-blur-xl px-4 pb-6 shadow-xl animate-in slide-in-from-top-2 md:hidden">
           <div className="flex flex-col space-y-4 pt-4">
-            <MobileNavLink href="/features">Features</MobileNavLink>
-            <MobileNavLink href="/pricing">Pricing</MobileNavLink>
-            <MobileNavLink href="/testimonials">Testimonials</MobileNavLink>
+            <MobileNavLink href="#how_it_works">How it works</MobileNavLink>
+            <MobileNavLink href="#testimonials">Testimonials</MobileNavLink>
+            <MobileNavLink href="#faq">Faqs</MobileNavLink>
             <div className="pt-4 border-t border-border/50 flex flex-col gap-3">
               {user?.email ? (
                 <Link href={'/dashboard/create-interview'}>
@@ -145,9 +138,12 @@ export function Navbar() {
                       Log in
                     </Button>
                   </Link>
-                  <Link href="https://github.com/mayank0274/mock-interview-with-ai">
+                  <Link
+                    target="_blank"
+                    href="https://github.com/mayank0274/mock-interview-with-ai"
+                  >
                     <Button className="w-full justify-center gap-2">
-                      Github
+                      See On Github
                       <Github className="w-3 h-3" />
                     </Button>
                   </Link>

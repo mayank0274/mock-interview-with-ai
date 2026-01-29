@@ -33,7 +33,10 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section className="py-24 relative overflow-hidden w-full">
+    <section
+      id="how_it_works"
+      className="py-24 relative overflow-hidden w-full"
+    >
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-30">
         <div className="absolute top-[20%] right-[10%] w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-[10%] left-[10%] w-[25rem] h-[25rem] bg-secondary/10 rounded-full blur-[100px]" />

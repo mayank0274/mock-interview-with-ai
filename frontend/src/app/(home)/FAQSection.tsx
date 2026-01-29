@@ -28,8 +28,10 @@ const faqs = [
 
 const FAQSection = () => {
   return (
-    <section className="py-24 w-full bg-background relative overflow-hidden">
-      {/* Subtle decorative background elements */}
+    <section
+      id="faq"
+      className="py-24 w-full bg-background relative overflow-hidden"
+    >
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl overflow-hidden -z-10 pointer-events-none opacity-20">
         <div className="absolute top-[10%] left-[20%] w-[15rem] h-[15rem] bg-primary/10 rounded-full blur-[80px]" />
         <div className="absolute bottom-[20%] right-[20%] w-[20rem] h-[20rem] bg-secondary/10 rounded-full blur-[100px]" />

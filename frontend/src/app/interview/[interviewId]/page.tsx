@@ -21,18 +21,6 @@ import {
   Turn,
 } from '@/types/interview.types';
 
-function speakMessage(message: string) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(message);
-  utterance.lang = 'en-IN';
-  utterance.rate = 0.7;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-  window.speechSynthesis.speak(utterance);
-  return utterance;
-}
-
 const VoiceIndicator = ({ color = 'green' }: { color?: string }) => (
   <motion.div
     className={cn(
@@ -159,17 +147,23 @@ const InterviewPage = ({
 
   // handle evaluation related things
   const handleEvaluationComplete = useCallback((data: any) => {
-    if (data.evaluation_payload) {
-      const interviewer_res = (data.evaluation_payload as InterviewerResponse)
-        .interviewer_res;
-      const utterance = speakMessage(interviewer_res.question);
-
-      if (utterance) {
-        utterance.onend = () => {
-          setTurn(Turn.INTERMEDIATE);
-        };
-      }
+    if (!data.evaluation_payload || !('speechSynthesis' in window)) {
+      return;
     }
+
+    const interviewer_res = (data.evaluation_payload as InterviewerResponse)
+      .interviewer_res;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(interviewer_res.question);
+    utterance.lang = 'en-IN';
+    utterance.rate = 0.6;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+
+    utterance.onend = () => {
+      setTurn(Turn.INTERMEDIATE);
+    };
   }, []);
 
   const [evaluationStatus, setEvaluationStatus] = useState('');
@@ -371,8 +365,7 @@ const InterviewPage = ({
             turn === Turn.INTERVIEWEE && 'ring-4 ring-primary',
           )}
         >
-          <Avatar className="w-24 h-24 md:w-32 md:h-32">
-            <AvatarImage src={user.avatar_url} />
+          <Avatar className="w-32 h-32 md:w-40 md:h-40">
             <AvatarFallback className="text-4xl uppercase">
               {user.name.slice(0, 2)}
             </AvatarFallback>
@@ -389,11 +382,6 @@ const InterviewPage = ({
           )}
         >
           <Avatar className="w-32 h-32 md:w-40 md:h-40">
-            <AvatarImage
-              src={
-                'https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=1024x1024&w=is&k=20&c=oGqYHhfkz_ifeE6-dID6aM7bLz38C6vQTy1YcbgZfx8='
-              }
-            />
             <AvatarFallback className="text-4xl uppercase">
               {interviewMetaData.interviewer_name.slice(0, 2)}
             </AvatarFallback>
