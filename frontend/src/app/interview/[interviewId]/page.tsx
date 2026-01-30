@@ -324,7 +324,7 @@ const InterviewPage = ({
   if (error) {
     return (
       <div className="text-destructive flex items-center justify-center h-screen">
-        {(error as { errorMsg: string }).errorMsg}
+        {(error as unknown as { errorMsg: string }).errorMsg}
       </div>
     );
   }

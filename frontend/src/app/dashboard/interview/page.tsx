@@ -72,7 +72,7 @@ export default function InterviewsPage() {
       </SidebarWrapper>
     );
 
-  const { results, total, limit } = data;
+  const { results = [], total = 0, limit = 0 } = data ?? {};
   const start = total === 0 ? 0 : (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
 

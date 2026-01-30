@@ -1,27 +1,45 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { FlatCompat } from '@eslint/eslintrc';
-import prettier from 'eslint-config-prettier';
-import pluginPrettier from 'eslint-plugin-prettier';
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import nextPlugin from '@next/eslint-plugin-next';
+import prettierPlugin from 'eslint-plugin-prettier';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+export default [
+  // Base JS rules
+  js.configs.recommended,
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+  // TypeScript rules
+  ...tseslint.configs.recommended,
 
-const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  // App rules
   {
+    files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
-      prettier: pluginPrettier,
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+      '@next/next': nextPlugin,
+      prettier: prettierPlugin,
     },
     rules: {
+      // React
+      'react/react-in-jsx-scope': 'off', // Next.js
+      ...reactHooksPlugin.configs.recommended.rules,
+
+      // Next.js
+      ...nextPlugin.configs.recommended.rules,
+
+      // Prettier
       'prettier/prettier': 'error',
     },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
   },
-  prettier,
+
+  // Ignore folders
   {
     ignores: [
       'node_modules/**',
@@ -29,8 +47,7 @@ const eslintConfig = [
       'out/**',
       'build/**',
       'next-env.d.ts',
+      'src/components/ui/**',
     ],
   },
 ];
-
-export default eslintConfig;

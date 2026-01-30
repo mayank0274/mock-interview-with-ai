@@ -37,6 +37,7 @@ export function MicPermissionDialog({
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await api.patch(`/interview/start/${interviewId}`, {});
       onInterviewStarted();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setPermissionError(true);
     } finally {
