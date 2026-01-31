@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     SPEECHMATICS_API_KEY: str
     INNGEST_DEV: int
     UPSTASH_REDIS_URL: str
+    BACKEND_URL: str
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

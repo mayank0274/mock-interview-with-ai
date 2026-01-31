@@ -28,7 +28,7 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 )
 async def init_login(request: Request):
     try:
-        redirect_uri = request.url_for("auth_via_google_callback")
+        redirect_uri = redirect_uri = f"{settings.BACKEND_URL}/auth/google/callback"
         return await google_oauth.google_oauth.authorize_redirect(request, redirect_uri)
     except Exception as e:
         print(e)
@@ -59,9 +59,7 @@ async def auth_via_google_callback(request: Request, session: sessionDep):
             await session.commit()
 
         token = encode_jwt({"email": user.get("email"), "role": existing_user.role})
-        response = RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/dashboard/create-interview"
-        )
+        response = RedirectResponse(url="/auth/redirect")
         response.set_cookie("access_token", token)
         return response
     except Exception:
@@ -88,3 +86,11 @@ async def me(currUser: currentUserDep, session: sessionDep):
         raise HTTPException(
             status_code=500, detail="Something went wrong getting user details"
         )
+
+
+@auth_router.get("/redirect", description="redirect after auth success")
+async def auth_redirect():
+    return RedirectResponse(
+        url=f"{settings.FRONTEND_URL}/dashboard/create-interview",
+        status_code=302,
+    )
