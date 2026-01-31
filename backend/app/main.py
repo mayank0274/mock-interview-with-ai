@@ -46,6 +46,7 @@ serve(
 
 @app.exception_handler(HTTPException)
 def handle_exception(req: Request, exc: HTTPException):
+    print({"errorMsg": exc.detail, "statusCode": exc.status_code})
     return JSONResponse(
         status_code=exc.status_code,
         content={"errorMsg": exc.detail, "statusCode": exc.status_code},
