@@ -60,7 +60,7 @@ async def auth_via_google_callback(request: Request, session: sessionDep):
 
         token = encode_jwt({"email": user.get("email"), "role": existing_user.role})
         response = RedirectResponse(url="/auth/redirect")
-        response.set_cookie("access_token", token)
+        # response.set_cookie("access_token", token)
         return response
     except Exception:
         raise HTTPException(
