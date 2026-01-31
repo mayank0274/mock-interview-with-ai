@@ -22,14 +22,18 @@ google_oauth.register(
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@auth_router.get(
+@auth_router.post(
     "/login",
     description="redirect user to Google -> we make a get req from frontend to it",
 )
 async def init_login(request: Request):
     try:
         redirect_uri = redirect_uri = f"{settings.BACKEND_URL}/auth/google/callback"
-        return await google_oauth.google_oauth.authorize_redirect(request, redirect_uri)
+        redirect_response = await google_oauth.google_oauth.authorize_redirect(
+            request, redirect_uri
+        )
+        google_auth_url = redirect_response.headers.get("location")
+        return {"auth_url": google_auth_url}
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Something went wrong while login")
@@ -58,9 +62,13 @@ async def auth_via_google_callback(request: Request, session: sessionDep):
             )
             await session.commit()
 
+        print("here")
         token = encode_jwt({"email": user.get("email"), "role": existing_user.role})
-        response = RedirectResponse(url="/auth/redirect")
-        # response.set_cookie("access_token", token)
+        response = RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/dashboard/create-interview",
+            status_code=302,
+        )
+        response.set_cookie("access_token", token)
         return response
     except Exception:
         raise HTTPException(
