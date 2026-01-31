@@ -2,8 +2,14 @@
 
 import { IUser } from '@/types/user.types';
 import { createContext, useContext, useMemo, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  UseMutateAsyncFunction,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api } from '@/http/api';
+import { toast } from 'sonner';
 
 type AuthContextType = {
   user: IUser | null;
@@ -11,6 +17,8 @@ type AuthContextType = {
   isError: boolean;
   refetchUser: () => void;
   setUser: (user: IUser | null) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  login: UseMutateAsyncFunction<any, Error, void, unknown>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +51,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [queryClient],
   );
 
+  const { mutateAsync: login } = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/auth/login');
+      return res.data;
+    },
+    onSuccess: (data) => {
+      window.location.href = data.auth_url;
+    },
+    onError: () => {
+      toast('Something went wrong while login');
+    },
+  });
+
   const value = useMemo(
     () => ({
       user: data ?? null,
@@ -50,8 +71,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isLoadingUser: isLoading,
       isError,
       refetchUser: refetch,
+      login,
     }),
-    [data, setUser, isLoading, isError, refetch],
+    [data, setUser, isLoading, isError, refetch, login],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

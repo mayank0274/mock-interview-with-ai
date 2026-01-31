@@ -12,7 +12,7 @@ import { useScroll, useMotionValueEvent } from 'framer-motion';
 
 export function Navbar() {
   const [open, setOpen] = React.useState(false);
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const pathname = usePathname();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = React.useState(false);
@@ -60,28 +60,27 @@ export function Navbar() {
             </Link>
           ) : (
             <>
-              {/* <Link href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                    Sign in
-                </Link> */}
-              <Link
+              {/* <Link
                 href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
                 className="group flex items-center gap-2"
+              > */}
+              <Button
+                variant="outline"
+                className="rounded-full border-primary/20 hover:bg-primary/5 hover:border-primary/50 transition-all duration-300"
+                onClick={async () => {
+                  await login();
+                }}
               >
-                <Button
-                  variant="outline"
-                  className="rounded-full border-primary/20 hover:bg-primary/5 hover:border-primary/50 transition-all duration-300"
-                >
-                  <Image
-                    src={GoogleIcon}
-                    alt="Google"
-                    width={18}
-                    height={18}
-                    className="mr-1"
-                  />
-                  <span>Log in</span>
-                  {/* <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" /> */}
-                </Button>
-              </Link>
+                <Image
+                  src={GoogleIcon}
+                  alt="Google"
+                  width={18}
+                  height={18}
+                  className="mr-1"
+                />
+                <span>Log in</span>
+              </Button>
+              {/* </Link> */}
               <Link
                 target="_blank"
                 href="https://github.com/mayank0274/mock-interview-with-ai"
@@ -121,23 +120,26 @@ export function Navbar() {
                 </Link>
               ) : (
                 <>
-                  <Link
+                  {/* <Link
                     href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`}
                     className="w-full"
+                  > */}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center gap-2"
+                    onClick={async () => {
+                      await login();
+                    }}
                   >
-                    <Button
-                      variant="outline"
-                      className="w-full justify-center gap-2"
-                    >
-                      <Image
-                        src={GoogleIcon}
-                        alt="Google"
-                        width={18}
-                        height={18}
-                      />
-                      Log in
-                    </Button>
-                  </Link>
+                    <Image
+                      src={GoogleIcon}
+                      alt="Google"
+                      width={18}
+                      height={18}
+                    />
+                    Log in
+                  </Button>
+                  {/* </Link> */}
                   <Link
                     target="_blank"
                     href="https://github.com/mayank0274/mock-interview-with-ai"
