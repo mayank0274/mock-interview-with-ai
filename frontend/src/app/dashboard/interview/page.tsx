@@ -28,6 +28,7 @@ type Interview = {
   interviewer_name: string;
   status: string;
   created_at: string;
+  end_time: string;
 };
 
 export default function InterviewsPage() {
@@ -151,7 +152,7 @@ export default function InterviewsPage() {
                   </TableCell>
 
                   <TableCell className="py-4">
-                    {formatDistanceToNow(new Date(i.created_at), {
+                    {formatDistanceToNow(new Date(i.end_time), {
                       addSuffix: true,
                     })}
                   </TableCell>

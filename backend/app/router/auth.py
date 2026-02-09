@@ -5,7 +5,7 @@ from fastapi.routing import APIRouter
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 from ..dependenices import sessionDep
-from ..models.user import User
+from ..models.user import User, Role
 from sqlmodel import select
 from ..services.jwt_service import encode_jwt
 from ..dependenices import currentUserDep
@@ -51,6 +51,7 @@ async def auth_via_google_callback(request: Request, session: sessionDep):
         user = await google_oauth.google_oauth.userinfo(token=token)
         res = await session.execute(select(User).where(User.email == user.get("email")))
         existing_user = res.scalars().first()
+        token = None
         #  if not user add in db
         if not existing_user:
             session.add(
@@ -60,17 +61,19 @@ async def auth_via_google_callback(request: Request, session: sessionDep):
                     avatar_url=user.get("picture"),
                 )
             )
+            token = encode_jwt({"email": user.get("email"), "role": Role.USER})
             await session.commit()
+        else:
+            token = encode_jwt({"email": user.get("email"), "role": existing_user.role})
 
-        print("here")
-        token = encode_jwt({"email": user.get("email"), "role": existing_user.role})
         response = RedirectResponse(
             url=f"{settings.FRONTEND_URL}/dashboard/create-interview",
             status_code=302,
         )
         response.set_cookie("access_token", token)
         return response
-    except Exception:
+    except Exception as e:
+        print(e)
         raise HTTPException(
             status_code=500, detail="Something went wrong while authentiction"
         )
